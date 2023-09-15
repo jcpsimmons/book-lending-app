@@ -40,3 +40,12 @@
     transform: translateY(0);
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  @layer base {
+    * {
+      color: hsl(var(--foreground));
+      border-color: hsl(var(--foreground));
+    }
+  }
+}
