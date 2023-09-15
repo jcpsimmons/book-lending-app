@@ -1,4 +1,5 @@
 import LogoutButton from '@/components/LogoutButton';
+import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
@@ -14,11 +15,22 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    return <h1>serious bug... contact Josh</h1>;
+  }
+
+  const { data } = await supabase
+    .from('users_public')
+    .select()
+    .eq('id', user.id);
+
+  const name = data?.[0]?.name;
 
   return (
     <html lang="en">
@@ -31,7 +43,7 @@ export default async function RootLayout({
                 <div>
                   {user ? (
                     <div className="flex items-center gap-4">
-                      {user.email}
+                      {name}
                       <LogoutButton />
                     </div>
                   ) : (

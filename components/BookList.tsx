@@ -26,7 +26,7 @@ const BookList = async ({ books, isLent }: Props) => {
       </div>
       {books?.length ? (
         <div className="mt-4">
-          <ul className="list-none border-4">
+          <ul className="list-none border-4 px-2">
             {books.map((book: any) => (
               <Link href={`/books/${book.id}`} key={book.id}>
                 <li
