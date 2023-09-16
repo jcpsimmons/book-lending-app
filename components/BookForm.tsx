@@ -6,6 +6,7 @@ import {
   createClientComponentClient,
 } from '@supabase/auth-helpers-nextjs';
 import { useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 
 type Props = {
   book?: Tables<'books'>;
@@ -17,6 +18,18 @@ const BookForm = ({ book, user }: Props) => {
   const [title, setTitle] = useState(book?.title ?? '');
   const [author, setAuthor] = useState(book?.author ?? '');
   const [lentTo, setLentTo] = useState(book?.lent_to ?? '');
+  const [query, setQuery] = useState('');
+  const debounced = useDebouncedCallback(async (value) => {
+    setQuery(value);
+    if (!!value) {
+      const { data, error } = await supabase
+        .from('users_public')
+        .select('id, name')
+        .ilike('name', `%${value}%`);
+      console.log('data', data);
+      console.log('error', error);
+    }
+  }, 500);
 
   const supabase = createClientComponentClient<Database>();
 
@@ -68,10 +81,9 @@ const BookForm = ({ book, user }: Props) => {
           <div className="mb-6">
             <label className="block text-sm font-bold mb-2">Lent To</label>
             <input
-              value={lentTo ?? ''}
               placeholder="Type to search for a user"
               className="shadow appearance-none border-2 w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline dark:bg-black"
-              onChange={(e) => setAuthor(e.target.value)}
+              onChange={(e) => debounced(e.target.value)}
             />
           </div>
         )}

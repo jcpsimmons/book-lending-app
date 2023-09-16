@@ -1,3 +1,4 @@
+import BackButton from '@/components/BackButton';
 import LogoutButton from '@/components/LogoutButton';
 import UpdateUsernameWarn from '@/components/UpdateUsernameWarn';
 import { Database } from '@/types/supabase';
@@ -41,7 +42,9 @@ export default async function RootLayout({
           <div className="w-full flex flex-col items-center">
             <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 mb-8">
               <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm text-foreground">
-                <div />
+                <div>
+                  <BackButton />
+                </div>
                 <div>
                   {user ? (
                     <div className="flex items-center gap-4">
@@ -59,7 +62,7 @@ export default async function RootLayout({
                 </div>
               </div>
             </nav>
-            {!!name && !username ? (
+            {!!name && user && !username ? (
               <UpdateUsernameWarn userId={user.id} />
             ) : (
               children

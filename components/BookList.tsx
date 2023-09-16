@@ -45,14 +45,16 @@ const BookList = async ({ books, isLent }: Props) => {
         <div className="w-full flex justify-center">
           <div className="w-full flex flex-col justify-center text-center">
             <h3>{emptyText}</h3>
-            {!isLent && (
-              <Link href="/books/new">
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4">
-                  Add Book
-                </button>
-              </Link>
-            )}
           </div>
+        </div>
+      )}
+      {!isLent && (
+        <div className="w-full text-center">
+          <Link href="/books/new">
+            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4">
+              Add Book
+            </button>
+          </Link>
         </div>
       )}
     </div>
