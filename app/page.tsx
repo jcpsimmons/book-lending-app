@@ -19,7 +19,10 @@ export default async function Index() {
   const { data: myBooks } = await supabase
     .from('books')
     .select()
+    .filter('user_id', 'eq', user.id)
     .order('title');
+
+  console.log('data', user.id);
   const { data: borrowedBooks } = await supabase
     .from('books')
     .select()

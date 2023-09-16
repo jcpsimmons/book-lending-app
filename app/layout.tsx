@@ -1,4 +1,5 @@
 import LogoutButton from '@/components/LogoutButton';
+import UpdateUsernameWarn from '@/components/UpdateUsernameWarn';
 import { Database } from '@/types/supabase';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
@@ -21,16 +22,17 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return <h1>serious bug... contact Josh</h1>;
+  let name, username;
+
+  if (!!user) {
+    const { data } = await supabase
+      .from('users_public')
+      .select()
+      .eq('id', user.id);
+
+    username = data?.[0]?.name;
+    name = username ?? user.email;
   }
-
-  const { data } = await supabase
-    .from('users_public')
-    .select()
-    .eq('id', user.id);
-
-  const name = data?.[0]?.name;
 
   return (
     <html lang="en">
@@ -57,7 +59,11 @@ export default async function RootLayout({
                 </div>
               </div>
             </nav>
-            {children}
+            {!!name && !username ? (
+              <UpdateUsernameWarn userId={user.id} />
+            ) : (
+              children
+            )}
           </div>
         </main>
       </body>
