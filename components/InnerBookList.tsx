@@ -1,12 +1,17 @@
+'use client';
 import { Tables } from '@/types/typeHelpers';
-import Link from 'next/link';
 
 type InnerBookListProps = {
   books: Tables<'books'>[] | null;
+  handleItemClick: (book: Tables<'books'>) => void;
   isLent?: boolean;
 };
 
-const InnerBookList = ({ books, isLent }: InnerBookListProps) => {
+const InnerBookList = ({
+  books,
+  isLent,
+  handleItemClick,
+}: InnerBookListProps) => {
   const emptyText = isLent
     ? "You're not borrowing any books right now."
     : "You haven't added any books yet.";
@@ -25,18 +30,22 @@ const InnerBookList = ({ books, isLent }: InnerBookListProps) => {
         <div className="mt-4">
           <ul className="list-none border-4 px-2">
             {books.map((book: any, idx) => (
-              <Link href={`/books/${book.id}`} key={book.id}>
-                <li
-                  key={book.id}
-                  className={`hover:scale-105 transform transition-all cursor-pointer ${
-                    idx != books.length - 1 && 'border-b'
-                  }`}
-                >
-                  <p className="px-6 py-4">{`${book.title} - ${
-                    book.author
-                  }${getLendingText(book.lent_to)}`}</p>
-                </li>
-              </Link>
+              <li
+                onClick={() => handleItemClick(book)}
+                key={book.id}
+                className={`hover:scale-105 transform transition-all cursor-pointer ${
+                  idx != books.length - 1 && 'border-b'
+                }`}
+              >
+                <p
+                  className={`px-6 ${!book?.lent_to ? 'py-4' : 'pt-4'}`}
+                >{`${book.title} - ${book.author}`}</p>
+                {!!book?.lent_to && (
+                  <p className="px-6 pb-4 italic text-sm">{`${getLendingText(
+                    book.lent_to.name
+                  )}`}</p>
+                )}
+              </li>
             ))}
           </ul>
         </div>

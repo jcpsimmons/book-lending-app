@@ -1,13 +1,39 @@
+'use client';
+
+import { Database } from '@/types/supabase';
 import { Tables } from '@/types/typeHelpers';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import InnerBookList from './InnerBookList';
 type Props = {
   books: Tables<'books'>[] | null;
   isLent?: boolean;
 };
 
-const BookList = async ({ books, isLent }: Props) => {
+const BookList = ({ books, isLent }: Props) => {
+  const router = useRouter();
   const title = isLent ? 'Borrowed Books' : 'My Books';
+  const supabase = createClientComponentClient<Database>();
+
+  const handleItemClick = async (book: Tables<'books'>) => {
+    if (isLent) {
+      const confirm = window.confirm(
+        `Are you sure you want to return ${book.title}?`
+      );
+      if (confirm) {
+        await supabase
+          .from('books')
+          .update({
+            lent_to: null,
+          })
+          .eq('id', book.id);
+        router.refresh();
+      }
+    } else {
+      router.push(`/books/${book.id}`);
+    }
+  };
 
   return (
     <div className="mb-8 border p-4">
@@ -15,7 +41,11 @@ const BookList = async ({ books, isLent }: Props) => {
         <h2 className="text-2xl">{title}</h2>
       </div>
 
-      <InnerBookList books={books} isLent={isLent} />
+      <InnerBookList
+        books={books}
+        isLent={isLent}
+        handleItemClick={handleItemClick}
+      />
 
       <div className="w-full text-center">
         <Link href={isLent ? '/books/search' : '/books/new'}>

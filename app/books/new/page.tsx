@@ -12,6 +12,7 @@ export default async function BookPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect('/login');
+  console.log('user', user);
 
   return (
     <div className="w-full flex flex-col items-center">

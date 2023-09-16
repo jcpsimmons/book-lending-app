@@ -5,11 +5,13 @@ import {
   User,
   createClientComponentClient,
 } from '@supabase/auth-helpers-nextjs';
+
 import { useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import Button from './Button';
 
 type Props = {
-  book?: Tables<'books'>;
+  book: Tables<'books'> & { lent_to?: { name: string; id: string } };
   usersPublic?: Tables<'users_public'>[];
   user: User;
 };
@@ -17,43 +19,52 @@ type Props = {
 const BookForm = ({ book, user }: Props) => {
   const [title, setTitle] = useState(book?.title ?? '');
   const [author, setAuthor] = useState(book?.author ?? '');
-  const [lentTo, setLentTo] = useState(book?.lent_to ?? '');
-  const [query, setQuery] = useState('');
-  const debounced = useDebouncedCallback(async (value) => {
-    setQuery(value);
-    if (!!value) {
-      const { data, error } = await supabase
+  const [lentToId, setLentToId] = useState<string | null>(
+    book?.lent_to?.id ?? null
+  );
+  const [lentToName, setLentToName] = useState(book?.lent_to?.name ?? null);
+
+  const [usersPublic, setUsersPublic] = useState<
+    Tables<'users_public'>[] | null
+  >(null);
+
+  const debounced = useDebouncedCallback(async () => {
+    if (!!lentToName) {
+      const { data } = await supabase
         .from('users_public')
         .select('id, name')
-        .ilike('name', `%${value}%`);
-      console.log('data', data);
-      console.log('error', error);
+        .ilike('name', `%${lentToName}%`);
+      setUsersPublic(data);
     }
   }, 500);
 
   const supabase = createClientComponentClient<Database>();
 
   const handleDelete = async () => {
-    // delete the book
-    // redirect to /
+    // show an alert to confirm deletion
+    const confirm = window.confirm(
+      'Are you sure you want to delete this book? This action is permanent.'
+    );
+
+    if (!confirm || !book) return;
+    const { error } = await supabase.from('books').delete().eq('id', book.id);
+    console.log('error', error);
   };
 
   const handleUpsert = async (e: any) => {
     e.preventDefault();
-    console.log('user.id', user.id);
+    console.log('user.id', user?.id);
     if (!!title && !!author) {
       const newBook = {
         title,
         author,
         user_id: user.id,
-        ...(!!lentTo && { lent_to: lentTo }),
+        ...(!!lentToId && { lent_to: lentToId }),
         ...(book?.id && { id: book?.id }),
       };
-      console.log('newBook', newBook);
 
-      const { data, error } = await supabase.from('books').upsert(newBook);
-      console.log('data', data);
-      console.log('error', error);
+      await supabase.from('books').upsert(newBook);
+      window.location.href = '/';
     }
   };
 
@@ -81,25 +92,48 @@ const BookForm = ({ book, user }: Props) => {
           <div className="mb-6">
             <label className="block text-sm font-bold mb-2">Lent To</label>
             <input
+              value={lentToName}
               placeholder="Type to search for a user"
-              className="shadow appearance-none border-2 w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline dark:bg-black"
-              onChange={(e) => debounced(e.target.value)}
+              className={`shadow appearance-none border-2 w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline dark:bg-black ${
+                !!lentToId ? 'border-green-400' : ''
+              }`}
+              onChange={(e) => {
+                setLentToName(e.target.value);
+                setLentToId(null);
+                debounced();
+              }}
             />
+
+            {!!usersPublic?.length && (
+              <ul className="list-none">
+                {usersPublic?.map((lendUser) => (
+                  <li
+                    onClick={() => {
+                      setLentToName(lendUser.name);
+                      setLentToId(lendUser.id);
+                      setUsersPublic(null);
+                    }}
+                    key={lendUser.id}
+                    className={`border hover:scale-105 transform transition-all cursor-pointer`}
+                  >
+                    <p className={`p-2`}>{lendUser.name}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
         <div className="flex items-center align-center justify-center mt-8">
           {!!book && (
-            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 focus:outline-none focus:shadow-outline">
+            <Button
+              className="border-red-500 mr-4 text-red-500"
+              onClick={() => handleDelete()}
+            >
               Delete
-            </button>
+            </Button>
           )}
 
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 focus:outline-none focus:shadow-outline"
-            onClick={handleUpsert}
-          >
-            Save
-          </button>
+          <Button onClick={handleUpsert}>Save</Button>
         </div>
       </form>
     </div>

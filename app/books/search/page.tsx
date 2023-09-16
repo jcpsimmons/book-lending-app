@@ -9,56 +9,86 @@ import { useDebouncedCallback } from 'use-debounce';
 
 const BookSearch = () => {
   const [books, setBooks] = useState<Tables<'books'>[] | null>([]);
+  const [isLent, setIsLent] = useState(false);
 
   const supabase = createClientComponentClient<Database>();
 
-  // get initial list of first 25 books on page load sorted by title
   useEffect(() => {
-    const fetchBooks = async () => {
-      const { data } = await supabase
-        .from('books')
-        .select('*')
-        .limit(25)
-        .order('title');
-      setBooks(data);
-    };
+    fetchBooks();
+  }, [isLent]);
+
+  const fetchBooks = async () => {
+    // select all book info and get user name from relational table on lent_to
+    const { data, error } = await supabase
+      .from('books')
+      .select(
+        `
+      *,
+      lent_to (
+        name,
+        id
+      )
+      `
+      )
+      .limit(100);
+    setBooks(data);
+  };
+
+  useEffect(() => {
     fetchBooks();
   }, []);
 
   const debounced = useDebouncedCallback(async (value) => {
-    if (!!value) {
-      const { data, error } = await supabase.rpc('search_books', {
-        search_text: value,
-      });
-      console.log('data', data);
-      console.log('error', error);
+    if (!value) {
+      fetchBooks();
+      return;
     }
-  }, 500);
 
-  const searchBooks = async (e: any) => {
-    const { data } = await supabase
-      .from('books')
-      .select('*')
-      .limit(25)
-      .order('title')
-      .ilike('title', `%${e.target.value}%`)
-      .or('author', 'eq', e.target.value);
+    const { data } = await supabase.rpc('search_books', {
+      search_text: value,
+    });
     setBooks(data);
-  };
+  }, 500);
 
   return (
     <div className="w-full flex flex-col items-center">
       <h1 className="text-4xl mb-6 font-bold">Book Search</h1>
-      <div className="flex items-center lg:items-start justify-around w-full flex-col lg:flex-row">
+      <div className="flex items-center justify-around w-full flex-col">
         <div className="mb-6">
-          <label className="block text-sm font-bold mb-2">Lent To</label>
+          <label className="block text-sm font-bold mb-2">
+            Search by Title or Author
+          </label>
           <input
-            placeholder="Type to search for a user"
+            placeholder="Great Lent"
             className="shadow appearance-none border-2 w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline dark:bg-black"
             onChange={(e) => debounced(e.target.value)}
           />
+
+          {/* hide lent books checkbox */}
+          <div className="mt-4">
+            <input
+              type="checkbox"
+              id="lent"
+              name="lent"
+              checked={isLent}
+              onChange={() => setIsLent(!isLent)}
+            />
+            <label htmlFor="lent" className="ml-2 text-sm">
+              Show Lent Books
+            </label>
+          </div>
         </div>
-        {!!books?.length && <InnerBookList books={books} />}
+        <div>
+          {!!books?.length ? (
+            <InnerBookList
+              books={books.filter((book) => {
+                return isLent ? !!true : !book.lent_to;
+              })}
+            />
+          ) : (
+            <h3>No books found - please refine your query.</h3>
+          )}
+        </div>
       </div>
     </div>
   );

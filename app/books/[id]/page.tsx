@@ -19,14 +19,26 @@ export default async function BookPage({
 
   // look up the book by id in supabase
   // if it doesn't exist, redirect to /
-  const { data } = await supabase.from('books').select().eq('id', bookId);
+  const { data, error } = await supabase
+    .from('books')
+    .select(
+      `
+    *,
+    lent_to (
+      name,
+      id
+    )
+    `
+    )
+    .eq('id', bookId);
+  console.log('error', error);
   const book = data?.[0];
   if (!book) redirect('/');
 
   return (
     <div className="w-full flex flex-col items-center">
       <h1 className="text-4xl mb-6 font-bold">Edit Book</h1>
-      <BookForm book={book} />
+      <BookForm book={book} user={user} />
     </div>
   );
 }
