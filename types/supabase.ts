@@ -76,7 +76,19 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      search_books: {
+        Args: {
+          search_text: string
+        }
+        Returns: {
+          author: string
+          created_at: string
+          id: number
+          lent_to: string | null
+          title: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
